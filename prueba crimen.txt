@@ -1,0 +1,141 @@
+ 1) Obtener el informe de la escena del crimen
+
+SELECT *
+FROM crime_scene_report
+WHERE date = 20180115
+AND city = 'SQL City';
+
+respuesta 
+
+date	     type	     description
+20180115   murder      Security footage shows that there were 2 witnesses. 
+                       The first witness lives at the last house on "Northwestern Dr". 
+			     The second witness, named Annabel, lives somewhere on "Franklin Ave".
+					
+2)  direccion de los testigos 
+
+SELECT *
+FROM person
+WHERE address_street_name = 'Northwestern Dr'
+ORDER BY address_number DESC
+LIMIT 1;
+
+primer testigo ( id: 14887 , name : Morty Schapiro , license_id : 118009 , address_number : 4919 , ddress_street_name : Northwestern Dr , ssn : 111564949)
+
+Segundo testigos ( id : 16371 , name : Annabel Miller , license_id : 490173 , address_number : 103 , address_street_name : Franklin Ave , Ssn :318771143)
+
+
+3)  entrevistas de los testigos
+
+
+
+  SELECT *
+FROM interview
+WHERE person_id IN (14887, 16371);
+
+
+person_id	transcript
+14887	      I heard a gunshot and then saw a man run out. He had a "Get Fit Now Gym" bag. The membership number on the bag started with "48Z". Only gold members have those bags. The man got into a car with a plate that included "H42W".
+16371	      I saw the murder happen, and I recognized the killer from my gym when I was working out last week on January the 9th.
+
+
+4)  miembros del gimnasio con membresía que comience con "48Z" 
+
+ SELECT *
+FROM get_fit_now_member
+WHERE id LIKE '48Z%';
+
+id	     person_id  name	         membership_start_date	 membership_status
+48Z38	     49550	    Tomas Baisley	   20170203	                    silver
+48Z7A      28819	    Joe Germuska	   20160305	                    gold
+48Z55	     67318	    Jeremy Bowers	   20160101	                    gold
+
+5) quién estuvo en el gimnasio el 9 de enero de 2018
+
+SELECT *
+FROM get_fit_now_check_in
+WHERE membership_id IN ('48Z7A', '48Z55')
+AND check_in_date = 20180109;
+
+membership_id	check_in_date	check_in_time	check_out_time
+48Z7A	           20180109	      1600	         1730
+48Z55	           20180109	      1530	         1700
+
+6) sospechosos que tengan un coche cuya matrícula incluya "H42W
+
+ SELECT *
+FROM drivers_license
+where plate_number LIKE '%H42W%' 
+
+id	      age	height    eye_color	hair_color	 gender	plate_number	car_make	car_model
+183779	21	65  	    blue	      blonde	 female	H42W0X	      Toyota	Prius
+423327	30	70	    brown	      brown	       male	      0H42W2	       Chevrolet	Spark LS
+664760	21	71	    black	      black	       male	      4H42WR	       Nissan	Alti
+
+7) verigicar si alguno de los sospechosos tiene alguna relación con los testigos o las pistas
+
+SELECT *
+FROM person
+WHERE license_id IN (183779, 423327, 664760);
+
+id	    name	        license_id	address_number	address_street_name	     ssn
+51739	   Tushar Chandra	   664760  	      312	            Ph, St	                 137882671
+67318	   Jeremy Bowers	   423327   	530	            Washington Pl, Apt 3A	     871539279    ** PRONCIPAL SOSPECHOSO
+78193	   Maxine Whitely	   183779	      110	            Fisk Rd	                 137882671
+
+
+8) entrevista de Jeremy Bowers 
+
+SELECT *
+FROM interview
+WHERE person_id = 67318;
+
+person_id	transcript
+67318	      I was hired by a woman with a lot of money. 
+            I don't know her name but I know she's around 5'5" (65") or 5'7" (67"). 
+		She has red hair and she drives a Tesla Model S. I know that she attended the SQL Symphony Concert 3 times in December 2017.
+			
+9) encontrar a la persona que contrató a Jeremy Bowers
+
+SELECT *
+FROM drivers_license
+WHERE hair_color = 'red'
+  AND height BETWEEN 65 AND 67
+  AND car_make = 'Tesla'
+  AND car_model = 'Model S';
+  
+  id	     age	height    eye_color	hair_color	gender	plate_number	car_make	   car_model
+202298	68	66	    green	      red	      female	500123	        Tesla	     Model S
+291182	65	66	    blue	      red	      female	08CM64	        Tesla	     Model S
+918773	48	65   	    black         red	      female	917UU3	        Tesla	     Model S
+
+10)ingreso de cada una de las tres sospechosas
+
+SELECT *
+FROM income
+WHERE ssn IN (
+  (SELECT ssn FROM person WHERE license_id = 202298),
+  (SELECT ssn FROM person WHERE license_id = 291182),
+  (SELECT ssn FROM person WHERE license_id = 918773)
+);
+
+ssn	      annual_income
+961388910	278000
+987756388	310000
+
+11) quiénes están asociadas a estos números de seguridad social 
+
+SELECT *
+FROM person
+WHERE ssn IN (961388910, 987756388)
+
+id	    name	            license_id	   address_number	  address_street_name	    ssn
+78881     Red Korb	        918773	       107	            Camerata Dr	         961388910
+99716	    Miranda Priestly	  202298	       1883	            Golden Ave	         987756388
+
+Miranda Priestly tiene un ingreso más alto , por lo tanto pudo contratar a Jeremy Bowers y coincide con la descripción física (pelirroja, dueña de un Tesla Model S)
+
+Podemos confirmar que Miranda Priestly es el cerebro detrás del asesinato
+
+
+
